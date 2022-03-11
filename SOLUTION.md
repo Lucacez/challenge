@@ -22,3 +22,15 @@ TODO :)
 ## 🤔 Thought Process
 
 TODO :)
+
+> ## Assumptions
+>
+> TODO :)
+
+## 🖱 Give it a try
+
+TODO :)
+
+## 📹 Showcase
+
+TODO :)
