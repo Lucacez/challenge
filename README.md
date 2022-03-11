@@ -1,4 +1,8 @@
+## 👀 Check my Reasoning and Solution [here]() 👀
+
 # Smart Contract Challenge
+
+---
 
 ## A) Challenge
 
@@ -10,9 +14,9 @@ ETHPool provides a service where people can deposit ETH and they will receive we
 
 #### Requirements
 
-- Only the team can deposit rewards.
-- Deposited rewards go to the pool of users, not to individual users.
-- Users should be able to withdraw their deposits along with their share of rewards considering the time when they deposited.
+-   Only the team can deposit rewards.
+-   Deposited rewards go to the pool of users, not to individual users.
+-   Users should be able to withdraw their deposits along with their share of rewards considering the time when they deposited.
 
 Example:
 
@@ -32,9 +36,9 @@ You can use any development tools you prefer: Hardhat, Truffle, Brownie, Solidit
 
 Useful resources:
 
-- Solidity Docs: https://docs.soliditylang.org/en/v0.8.4
-- Educational Resource: https://github.com/austintgriffith/scaffold-eth
-- Project Starter: https://github.com/abarmat/solidity-starter
+-   Solidity Docs: https://docs.soliditylang.org/en/v0.8.4
+-   Educational Resource: https://github.com/austintgriffith/scaffold-eth
+-   Project Starter: https://github.com/abarmat/solidity-starter
 
 ### 2) Write tests
 
@@ -46,7 +50,7 @@ Deploy the contract to any Ethereum testnet of your preference. Keep record of t
 
 Bonus:
 
-- Verify the contract in Etherscan
+-   Verify the contract in Etherscan
 
 ### 4) Interact with the contract
 
