@@ -2,20 +2,23 @@
 
 pragma solidity ^0.8.0;
 
-contract ETHPool {
-    /*
-    User Address
-    User Balance
-    
-    */
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract ETHPool is Ownable {
 
     /* --------------------------------- Staking -------------------------------- */
     mapping(address => uint256) public userStakedAmount;
 
-    /* --------------------------------- Staking -------------------------------- */
-    function stakeETH() public payable {
-        require(msg.value > 0, "Must send a positive amount of ETH.");    
+    /* --------------------------------- Rewards -------------------------------- */
+    uint256 public totalRewardBalance;
 
+    modifier positiveEthValue {
+        require(msg.value > 0, "Must send a positive amount of ETH.");    
+        _;
+    }
+
+    /* --------------------------------- Staking -------------------------------- */
+    function stakeETH() public payable positiveEthValue{
         userStakedAmount[msg.sender] += msg.value;
     }
 
@@ -35,4 +38,8 @@ contract ETHPool {
         return address(this).balance;
     }
 
+    /* --------------------------------- Rewards -------------------------------- */
+    function depositRewards() public payable onlyOwner positiveEthValue {
+        totalRewardBalance += msg.value;
+    }
 }
