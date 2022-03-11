@@ -11,6 +11,7 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
     -   ETH-Brownie - _Development Framework_
 -   `Frontend`
     -   React - _UI Framework_
+    -   Ethers.js - _Web3 Library_
 
 ---
 
