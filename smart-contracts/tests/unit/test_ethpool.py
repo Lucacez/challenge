@@ -37,6 +37,31 @@ def test_can_stake():
     assert ethpool.getPoolBalance() == Web3.toWei(toStakeETHAmount * 2, "ether")
 
 
+def test_cant_stake_zero():
+    # Arrange
+    owner, ethpool = _init()
+    userA = get_account(1)
+    toStakeETHAmount = 0
+
+    # Assert
+    with pytest.raises(exceptions.VirtualMachineError):
+        ethpool.stakeETH(
+            {
+                "from": owner,
+                "value": Web3.toWei(toStakeETHAmount, "ether"),
+            }
+        ).wait(1)
+    with pytest.raises(exceptions.VirtualMachineError):
+        ethpool.stakeETH(
+            {
+                "from": userA,
+                "value": Web3.toWei(toStakeETHAmount, "ether"),
+            }
+        ).wait(1)
+
+    assert ethpool.getPoolBalance() == 0
+
+
 def test_can_withdraw():
     # Arrange
     owner, ethpool = _init()
@@ -85,3 +110,25 @@ def test_can_withdraw():
         ethpool.withdrawETH(
             {"from": userA},
         ).wait(1)
+
+
+def test_can_deposit_rewards():
+    # Arrange
+    owner, ethpool = _init()
+    userA = get_account(1)
+    toDepositRewardAmount = 0.5
+
+    # Act
+    ethpool.depositRewards(
+        {
+            "from": owner,
+            "value": Web3.toWei(toDepositRewardAmount, "ether"),
+        }
+    ).wait(1)
+
+    # Assert
+    ethpool.totalRewardBalance() == ethpool.balance()
+    ethpool.totalRewardBalance() == Web3.toWei(toDepositRewardAmount, "ether")
+
+    with pytest.raises(exceptions.VirtualMachineError):
+        ethpool.depositRewards({"from": userA}).wait(1)
