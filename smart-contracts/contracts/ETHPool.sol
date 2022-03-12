@@ -12,6 +12,20 @@ contract ETHPool is Ownable {
     /* --------------------------------- Rewards -------------------------------- */
     uint256 public totalRewardBalance;
 
+    /* --------------------------------- Events -------------------------------- */
+    event StakedETH(
+        address indexed user,
+        uint256 amount
+    );
+    event WithdrawnETH(
+        address indexed user,
+        uint256 amount
+    );
+    event DepositedRewards(
+        uint256 amount
+    );
+
+    /* -------------------------------- Modifiers ------------------------------- */
     modifier positiveEthValue {
         require(msg.value > 0, "Must send a positive amount of ETH.");    
         _;
@@ -20,6 +34,7 @@ contract ETHPool is Ownable {
     /* --------------------------------- Staking -------------------------------- */
     function stakeETH() public payable positiveEthValue{
         userStakedAmount[msg.sender] += msg.value;
+        emit StakedETH(msg.sender, msg.value);
     }
 
     function withdrawETH() public {
@@ -31,6 +46,8 @@ contract ETHPool is Ownable {
         // AFAIK This is the preferred way of transferring ETH currently
         (bool sent, ) = msg.sender.call{value: staked}("");
         require(sent, "Failed to send Ether.");
+
+        emit WithdrawnETH(msg.sender, staked);
     }
 
     /* ---------------------------------- View --------------------------------- */
@@ -41,5 +58,6 @@ contract ETHPool is Ownable {
     /* --------------------------------- Rewards -------------------------------- */
     function depositRewards() public payable onlyOwner positiveEthValue {
         totalRewardBalance += msg.value;
+        emit DepositedRewards(msg.value);
     }
 }
