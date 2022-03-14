@@ -107,6 +107,11 @@ contract ETHPool is Ownable {
         return _totalPoolBalance;
     }
 
+    /// @return the current total of rewards tokens to be distributed.
+    function getRewardBalance() public view returns (uint256) {
+        return _totalRewardBalance;
+    }
+
     function getUserPendingRewards(address account)
         public
         view
