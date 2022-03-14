@@ -2,7 +2,7 @@
 
 The project is divided into two sections: `Smart Contracts` & `Frontend`.
 
-> The challenge does not explicitly require a frontend, however I've decided to add it anwyway as an extra learning experience for myself.
+> The challenge does not explicitly require a frontend, however I've decided to add it anyway as an extra learning experience for myself.
 
 ## 🧙‍♂️ Tech used
 
@@ -15,13 +15,22 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
 
 ---
 
-## 💻 Set up
+## Index
 
-TODO :)
+-   [🤔 Thought Process](#-thought-process)
+    -   [The Problem: Efficiency](#the-problem-efficiency)
+    -   [Proposed Solution](#proposed-solution)
+-   [💻 Set up](#-set-up)
+-   [🖱 Give it a try](#-give-it-a-try)
+-   [📹 Showcase](#-showcase)
+-   [📚 Resources](#-resources)
+
+---
 
 ## 🤔 Thought Process
 
 Below is the thought process I took, and the way I decided to solve the challenge.
+<a name="b"></a>
 
 ### Smart Contracts
 
@@ -49,13 +58,27 @@ The reward system must:
 -   Reward calculation only takes into account the users in the pool at the time it is deposited by the owner.
 -   More?
 
-### Frontend
+### The Problem: Efficiency
+
+<a name="efficiency"></a>
+
+It is easy and intuitive to come up with a straight-forward solution that's able to distribute the rewards proportionally between all of the pool's participants whenever the rewards are deposited.
+
+However, _in my opinion_, doing this would not be elegant at all, as it would require looping through all users and calculate their share every single time. In general - though specially in a blockchain context - this would make the transaction considerably **expensive** in terms of computational power, and **not scalable** as it would only get worse the more users are involved.
+
+This is why I've opted to look for an alternative to try and solve this in a much more efficient way.
+
+### Proposed Solution
+
+> ### Domain Assumptions
+>
+> -   **ERC-20 Reward Token**: For the sake of making it slightly more interesting, I've decided to make the reward token an ERC-20 instead of just ETH.
+>
+> -   TODO :)
+
+## 💻 Set up
 
 TODO :)
-
-> ## Assumptions
->
-> TODO :)
 
 ## 🖱 Give it a try
 
@@ -64,3 +87,15 @@ TODO :)
 ## 📹 Showcase
 
 TODO :)
+
+## 📚 Resources
+
+> ### Smart Contract Solution <a name="resources"></a>
+>
+> -   Paper _"Scalable Reward Distribution on the Ethereum Blockchain"_ by Bogdan Batog, Lucian Boca, Nick Johnson.
+>
+> -   EIP-1973 [Scalable Rewards](https://eips.ethereum.org/EIPS/eip-1973).
+>
+> -   Scalable implementation of the [Synthetix Reward System](https://github.com/Synthetixio/synthetix/blob/develop/contracts/StakingRewards.sol), despite not being completely applicable to this challenge's requirements.
+>
+> -   [Scalable Reward Distribution with Changing Stake Sizes](https://solmaz.io/2019/02/24/scalable-reward-changing/), Solmaz.io.
