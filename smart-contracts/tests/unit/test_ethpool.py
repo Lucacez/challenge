@@ -97,8 +97,8 @@ def test_can_withdraw():
     assert initBalanceOwner == owner.balance()
     assert initBalanceUserA == userA.balance()
 
-    assert ethpool.userStakedAmount(owner.address) == 0
-    assert ethpool.userStakedAmount(userA.address) == 0
+    assert ethpool.userStakedBalance(owner.address) == 0
+    assert ethpool.userStakedBalance(userA.address) == 0
     assert ethpool.getPoolBalance() == 0
 
     with pytest.raises(exceptions.VirtualMachineError):
@@ -127,8 +127,8 @@ def test_can_deposit_rewards():
     ).wait(1)
 
     # Assert
-    ethpool.totalRewardBalance() == ethpool.balance()
-    ethpool.totalRewardBalance() == Web3.toWei(toDepositRewardAmount, "ether")
+    ethpool.getRewardBalance() == ethpool.balance()
+    ethpool.getRewardBalance() == Web3.toWei(toDepositRewardAmount, "ether")
 
     with pytest.raises(exceptions.VirtualMachineError):
         ethpool.depositRewards({"from": userA}).wait(1)
