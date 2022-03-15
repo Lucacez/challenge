@@ -20,14 +20,14 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
 -   [🤔 Thought Process](#process)
     -   [The Problem: Efficiency](#the-problem-efficiency)
     -   [Proposed Solution](#proposed-solution)
--   [💻 Set up](#💻-set-up)
--   [🖱 Give it a try](#🖱-give-it-a-try)
--   [📹 Showcase](#📹-showcase)
--   [📚 Resources](#📚-resources)
+-   [💻 Set up](#set-up)
+-   [🖱 Give it a try](#try)
+-   [📹 Showcase](#showcase)
+-   [📚 Resources](#resources)
 
 ---
 
-<a id="process">dsfsd</a>
+<a id="process"></a>
 
 ## 🤔 Thought Process
 
@@ -69,7 +69,7 @@ This is why I've opted to look for an alternative to try and solve this in a muc
 
 ### Proposed Solution
 
-> My approach to solve this problem is heavily inspired by the different [resources](#📚-resources) found at the end of this file. However I had to come up with an adaptation in order to abide by the restrictions presented by this challenge.
+> My approach to solve this problem is heavily inspired by the different [resources](#resources) found at the end of this file. However I had to come up with an adaptation in order to abide by the restrictions presented by this challenge.
 
 There are two main factors to be considered in this problem:
 
@@ -151,17 +151,25 @@ We can now see that all values are present when _p<sub>n</sub>_ is the current p
 > -   **The Owner is the Admin**: For simplicity, the admin in charge of the rewards is the owner itself.
 >     -   This could easily be extended to allow more than one people, aka, create a _Team_ role instead.
 
+<a id="set-up"></a>
+
 ## 💻 Set up
 
 TODO :)
+
+<a id="try"></a>
 
 ## 🖱 Give it a try
 
 TODO :)
 
+<a id="showcase"></a>
+
 ## 📹 Showcase
 
 TODO :)
+
+<a id="resources"></a>
 
 ## 📚 Resources
 
