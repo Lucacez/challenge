@@ -10,8 +10,8 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
     -   Solidity - _Smart Contracts_
     -   ETH-Brownie - _Development Framework_
 -   `Frontend`
-    -   React - _UI Framework_
-    -   Ethers.js - _Web3 Library_
+    -   React - _UI Framework_ (WIP)
+    -   Ethers.js - _Web3 Library_ (WIP)
 
 ---
 
