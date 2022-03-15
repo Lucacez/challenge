@@ -110,7 +110,7 @@ Now, what are these _S_ values really?
 
 Well, the _S_ value is an accumulator that contains all the reward history of the contract. It takes the rewards _R_ and distributes them between all the staked tokens in the pool at a certain time, _B<sub>T, p<sub>i</sub></sub>_ . That is:
 
-![balance](readme-assets/sgeneral.png)
+![balance](readme-assets/Sgeneral.png)
 
 And this is where the magic 🧙‍♂️ happens.
 
