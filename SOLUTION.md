@@ -17,7 +17,7 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
 
 ## Index
 
--   [🤔 Thought Process](#🤔-thought-process)
+-   [🤔 Thought Process](#process)
     -   [The Problem: Efficiency](#the-problem-efficiency)
     -   [Proposed Solution](#proposed-solution)
 -   [💻 Set up](#💻-set-up)
@@ -26,6 +26,8 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
 -   [📚 Resources](#📚-resources)
 
 ---
+
+<a id="process">dsfsd</a>
 
 ## 🤔 Thought Process
 
