@@ -275,6 +275,72 @@ def test_can_claim_rewards():
     ) + userB_initialBal - Web3.toWei(userB_toStake, "ether")
 
 
+def test_can_deposit_multiple_times_and_claim():
+    # An user should be to deposit multiple times throughout the contract's lifetime
+    # and still be able to claim the appropriate rewards.
+    #
+    # In this example, UserA will deposit 5 ETH in batches of 1, 2, 1, 1 and then claim.
+    # UserB will be in the pool as well from the start so rewards don't all go to A.
+    # ADMIN will distribute 5 ETH total in batches of 1, 1, 3
+    #
+    # t0:   A deposits 1 ETH
+    #       B deposits 1 ETH
+    # t1:   ADMIN distributes 1 ETH
+    #       A deposits 2 ETH
+    # t2:   ADMIN distributes 1 ETH
+    #       A deposits 1 ETH
+    #       A deposits 1 ETH
+    # t3:   ADMIN distributes 3 ETH
+    #       A, B withdraw all.
+    #
+    # Expected rewards:
+    #       A: 3.75 ETH
+    #       B: 1.25 ETH
+
+    # Arrange
+    owner, ethpool = _init()
+    userA = get_account(1)
+    userB = get_account(2)
+
+    userA_initialBal = userA.balance()
+    userB_initialBal = userB.balance()
+
+    # Act
+    # t0
+    ethpool.stakeETH({"from": userA, "value": Web3.toWei(1, "ether")}).wait(1)
+    ethpool.stakeETH({"from": userB, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    # t1
+    ethpool.depositRewards({"from": owner, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    ethpool.stakeETH({"from": userA, "value": Web3.toWei(2, "ether")}).wait(1)
+
+    # t2
+    ethpool.depositRewards({"from": owner, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    ethpool.stakeETH({"from": userA, "value": Web3.toWei(1, "ether")}).wait(1)
+    ethpool.stakeETH({"from": userA, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    # t3
+    ethpool.depositRewards({"from": owner, "value": Web3.toWei(3, "ether")}).wait(1)
+
+    ethpool.claimRewards({"from": userA}).wait(1)
+    ethpool.claimRewards({"from": userB}).wait(1)
+
+    # Assert
+    userA_expectedReward = Decimal(3.75)
+    userB_expectedReward = Decimal(1.25)
+    userA_totalStaked = Decimal(5)
+    userB_totalStaked = Decimal(1)
+
+    assert pytest.approx(userA.balance()) == Web3.toWei(
+        userA_expectedReward, "ether"
+    ) + userA_initialBal - Web3.toWei(userA_totalStaked, "ether")
+    assert pytest.approx(userB.balance()) == Web3.toWei(
+        userB_expectedReward, "ether"
+    ) + userB_initialBal - Web3.toWei(userB_totalStaked, "ether")
+
+
 def test_custom_scenario():
     # In this scenario, users A, B, C will deposit ETH to the pool at different intervals
     # as well as change their balances throughout time.
@@ -371,5 +437,3 @@ def test_custom_scenario():
     assert Web3.fromWei(userC_initialBal, "ether") == pytest.approx(
         Web3.fromWei(userC.balance(), "ether") - expectedRewardC
     )
-
-    # print(userA_tx.events)
