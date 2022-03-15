@@ -182,3 +182,8 @@ TODO :)
 > -   Scalable implementation of the [Synthetix Reward System](https://github.com/Synthetixio/synthetix/blob/develop/contracts/StakingRewards.sol), despite not being completely applicable to this challenge's requirements.
 >
 > -   [Scalable Reward Distribution with Changing Stake Sizes](https://solmaz.io/2019/02/24/scalable-reward-changing/), Solmaz.io.
+
+> ### Smart Contract Testing
+>
+> -   Inspiration about different [automated tests](https://antonioshadji.github.io/ethereum-staking-smart-contract/#how-to-test-the-stakepool) suitable for a staking pool.
+> -   Sorted through the multiple [Synthetix.io Tests](https://github.com/Synthetixio/synthetix/tree/develop/test/contracts), though specially had a close look at the [Staking Rewards](https://github.com/Synthetixio/synthetix/blob/develop/test/contracts/StakingRewards.js) and [Rewards Distribution](https://github.com/Synthetixio/synthetix/blob/develop/test/contracts/RewardsDistribution.js).
