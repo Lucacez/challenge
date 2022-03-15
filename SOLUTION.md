@@ -124,7 +124,7 @@ So _S_ contains the total reward per staked token from the very beginning until 
 
 Another thing missing is some way to "tag" the moment from which the user has rights to claim part of those total rewards. This is where _S<sub>u</sub>_ comes in; a variable that denotes the amount of _S_ rewards that don't belong to User _u_. Subtracting it does the job here, as it will take out any previous rewards the pool has produced until the current period, and allow for any upcoming ones to count towards the user pending rewards.
 
-Last step is to always override User _u_'s latest mask, whenever their rewards are calculated; with the current total mask.
+Last step is to always override User _u_'s latest mask _S<sub>u, p<sub>i</sub></sub>_, whenever their rewards are calculated; with the current total mask: _S<sub>u, p<sub>i</sub></sub>_ = _S<sub>u, p<sub>n</sub></sub>_
 
 --
 
