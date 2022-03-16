@@ -3,12 +3,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /// @title ETHPool
 /// @author CMierez
 /// @notice ETH Staking Pool with an sporadic centralized Rewards distribution
-contract ETHPool is Ownable {
+contract ETHPool is Ownable, ReentrancyGuard {
     /* -------------------------------------------------------------------------- */
     /*                                  Variables                                 */
     /* -------------------------------------------------------------------------- */
@@ -93,6 +93,7 @@ contract ETHPool is Ownable {
     function stakeETH()
         public
         payable
+        nonReentrant
         positiveEthValue
         updateUserRewards(msg.sender)
     {
@@ -102,7 +103,11 @@ contract ETHPool is Ownable {
     }
 
     /// @notice Withdraws all the user's staked tokens and updates the pool's balance.
-    function withdrawAllETH() public updateUserRewards(msg.sender) {
+    function withdrawAllETH()
+        public
+        nonReentrant
+        updateUserRewards(msg.sender)
+    {
         uint256 staked = userStakedBalance[msg.sender];
         require(staked > 0, "Must have staked ETH to withdraw.");
 
@@ -120,6 +125,7 @@ contract ETHPool is Ownable {
     /// @param _amount the exact amount of tokens to withdraw.
     function withdrawExactETH(uint256 _amount)
         public
+        nonReentrant
         updateUserRewards(msg.sender)
     {
         uint256 staked = userStakedBalance[msg.sender];
@@ -194,7 +200,7 @@ contract ETHPool is Ownable {
     }
 
     /// @notice Claim all the user's pending rewards.
-    function claimRewards() public updateUserRewards(msg.sender) {
+    function claimRewards() public nonReentrant updateUserRewards(msg.sender) {
         UserReward storage uReward = userRewards[msg.sender];
         uint256 pending = uReward.pendingAmount;
         require(uReward.pendingAmount > 0, "User has no pending rewards.");
