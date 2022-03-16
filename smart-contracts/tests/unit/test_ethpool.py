@@ -63,6 +63,24 @@ def test_cant_stake_zero():
     assert ethpool.getPoolBalance() == 0
 
 
+def test_cant_withdraw_if_no_deposit():
+    # User should not be able to withdraw if no deposit has been made
+
+    # Arrange
+    owner, ethpool = _init()
+    userA = get_account(1)
+    userA_initBalance = userA.balance()
+
+    # Assert
+    with pytest.raises(exceptions.VirtualMachineError):
+        ethpool.withdrawAllETH({"from": userA})
+    
+    with pytest.raises(exceptions.VirtualMachineError):
+        ethpool.withdrawExactETH(Web3.toWei(0.01, "ether"), {"from": userA})
+
+    assert userA_initBalance == userA.balance()
+
+
 def test_can_withdraw_all():
     # Arrange
     owner, ethpool = _init()
@@ -185,6 +203,36 @@ def test_can_withdraw_exact():
         ).wait(1)
 
 
+def test_no_rewards_to_claim_if_user_didnt_deposit():
+    # An userA shouldn't be able to claim any rewards if they aren't staked during
+    # the reward periods
+
+    # Arrange
+    owner, ethpool = _init()
+    userA = get_account(1)
+    userB = get_account(2)
+
+    userA_initBalance = userA.balance()
+
+    # Act
+    ethpool.stakeETH({"from": userB, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    ethpool.depositRewards({"from": owner, "value": Web3.toWei(1, "ether")}).wait(1)
+    ethpool.depositRewards({"from": owner, "value": Web3.toWei(1, "ether")}).wait(1)
+    ethpool.depositRewards({"from": owner, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    # Assert
+    with pytest.raises(exceptions.VirtualMachineError):
+        ethpool.claimRewards({"from": userA}).wait(1)
+
+    assert ethpool.getRewardBalance() == Web3.toWei(1 * 3, "ether")
+
+    assert ethpool.userStakedBalance(userA.address) == 0
+    assert userA_initBalance == userA.balance()
+    assert ethpool.userRewards(userA.address)["pendingAmount"] == 0
+    assert ethpool.userRewards(userA.address)["totalAmount"] == 0
+
+
 def test_can_deposit_rewards():
     # Arrange
     owner, ethpool = _init()
@@ -273,6 +321,38 @@ def test_can_claim_rewards():
     assert pytest.approx(userB.balance()) == Web3.toWei(
         userB_expectedReward, "ether"
     ) + userB_initialBal - Web3.toWei(userB_toStake, "ether")
+
+
+def test_can_claim_rewards_after_withdraw():
+    # User should be able to claim accumulated rewards even after withdrawing
+    # aka with a zero staking balance
+    #
+    # t0:   A deposits 1 ETH
+    # t1:   ADMIN distributes 1 ETH reward
+    #       A withdraws 1 ETH
+    #       A claims rewards
+    # Expected:
+    #       A claims 1 ETH
+
+    # Arrange
+    owner, ethpool = _init()
+    userA = get_account(1)
+
+    # Act
+    ethpool.stakeETH({"from": userA, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    # t1
+    ethpool.depositRewards({"from": owner, "value": Web3.toWei(1, "ether")}).wait(1)
+
+    ethpool.withdrawAllETH({"from": userA}).wait(1)
+
+    claimTx = ethpool.claimRewards({"from": userA})
+    claimTx.wait(1)
+
+    # Assert
+    assert ethpool.userStakedBalance(userA.address) == 0
+    assert "ClaimedRewards" in claimTx.events
+    assert claimTx.events["ClaimedRewards"]["amount"] == Web3.toWei(1, "ether")
 
 
 def test_can_deposit_multiple_times_and_claim():
