@@ -17,19 +17,32 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
 
 ## Index
 
--   [🤔 Thought Process](#process)
-    -   [The Problem: Efficiency](#the-problem-efficiency)
-    -   [Proposed Solution](#proposed-solution)
--   [💻 Set up](#set-up)
--   [🖱 Give it a try](#try)
--   [📹 Showcase](#showcase)
--   [📚 Resources](#resources)
+### [🤔 Thought Process - ETHPoolV1](#process1)
+
+-   [The Problem: Efficiency](#the-problem-efficiency)
+-   [Proposed Solution](#proposed-solution)
+-   [How it works](#how-it-works---v1)
+-   [Assumptions](#domain-assumptions)
+
+### [🤔 Thought Process - ETHPoolV2](#process2)
+
+-   [Upgrading the V1 Contract](#upgrading-the-v1-contract)
+-   [How it works](#how-it-works---v2)
+-   [To keep in mind](#to-keep-in-mind)
+
+### [💻 Set up](#set-up)
+
+### [🖱 Give it a try](#try)
+
+### [📹 Showcase](#showcase)
+
+### [📚 Resources](#resources)
 
 ---
 
-<a id="process"></a>
+<a id="process1"></a>
 
-## 🤔 Thought Process
+## 🤔 Thought Process - ETHPool V1
 
 Below is the thought process I took, and the way I decided to solve the challenge.
 
@@ -97,18 +110,7 @@ where:
 >
 > In a more realistic contract, a _Period_ would be some other kind of unit, like Blocks or Time.
 
-These _S_ values contain all the needed reward distribution information, and would normally require a loop to be computed at the time of distribution. But in this situation, in order to guarantee efficiency, all calculations in the smart contract are done progressively as different interactions happen. These interactions can be divided into two types:
-
--   _User Interaction_:
-
-    -   Updates user's accumulated rewards, if applicable.
-    -   Updates user's mask to fit the new reward calculation. (_S<sub>u</sub>_)
-
--   _Admin Reward Interaction_:
-    -   Signals the change of a _Period_, thus needing to update the total mask. (_S_)
-    -   **[!]** Does not do any calculations related to the users.
-
-Now, what are these _S_ values really?
+Now, what are these _S_ values?
 
 Well, the _S_ value is an accumulator that contains all the reward history of the contract. It takes the rewards _R_ and distributes them between all the staked tokens in the pool at a certain time, _B<sub>T, p<sub>i</sub></sub>_ . That is:
 
@@ -116,40 +118,101 @@ Well, the _S_ value is an accumulator that contains all the reward history of th
 
 And this is where the magic 🧙‍♂️ happens.
 
-The strategy consists of avoiding having to go through the sum process on one go (loop), and instead calculate the next _S_ whenever a new period _p<sub>i</sub>_ begins, using the corresponding rewards _R_ and the current pool balance _B<sub>T, p<sub>i</sub></sub>_ , and accumulating the result into _S<sub>i-1</sub>_. That is:
+As it can be deduced from the above formula, the _S_ value would require a loop in order to be computed for a certain time of distribution _n_. However, what if we can guarantee that this _n_ value is always the latest period? To make this possible, all calculations in the smart contract are thus done progressively as different **mutative** interactions happen. And to further optimize this process, these interactions can be divided into two types:
+
+-   _User Interaction_:
+
+    Happens when a _user_ interacts with the smart contract in a state-mutative way (`deposit`, `withdraw`, or `claim`)
+
+    When this happens, the user-related reward state variables need to be calculated. That is:
+
+    -   Update user's accumulated rewards, if applicable.
+    -   Update user's latest mask to fit the new reward calculation. (_S<sub>u</sub>_)
+
+-   _Reward Interaction_:
+
+    Happens when the _admin_ interacts with the smart contract in a state-mutative way (`depositReward`)
+
+    When this happens, the global reward state variable is updated:
+
+    -   Update the total mask. (_S_)
+        -   This is specific to this domain since the reward depositing action is what signals the change of the current _Period_.
+    -   **[!]** Does not do any calculations related to the users.
+
+Thus, the strategy consists of avoiding having to go through the sum process on one go (loop), and instead calculate the next _S_ whenever a new period _p<sub>i</sub>_ begins, using the corresponding rewards _R_ and the current pool balance _B<sub>T, p<sub>i</sub></sub>_ , and accumulating the result into _S<sub>i-1</sub>_. That is:
 
 ![balance](readme-assets/Ssimplified.png)
 
-> **[!]** This calculation is performed on every **_Admin Reward Interaction_**
+> **[!]** This calculation is performed on every **_Reward Interaction_**
 
 So _S_ contains the total reward per staked token from the very beginning until the current period. In other words, we can use _S_ to know how many rewards each token is worth from the start of the rewards, and thus can calculate the corresponding rewards each user is entitled to by using their balance.
 
-Another thing missing is some way to "tag" the moment from which the user has rights to claim part of those total rewards. This is where _S<sub>u</sub>_ comes in; a variable that denotes the amount of _S_ rewards that don't belong to User _u_. Subtracting it does the job here, as it will take out any previous rewards the pool has produced until the current period, and allow for any upcoming ones to count towards the user pending rewards.
+We are still not quite done, though.
+
+Now another thing missing is some way to "tag" the moment from which the user has rights to claim part of those total rewards. This is where _S<sub>u</sub>_ comes in; a variable that denotes the amount of _S_ rewards that **don't** belong to User _u_. Subtracting it does the job here, as it will take out any previous rewards the pool has produced until the current period, and allow for any upcoming ones to count towards the user's pending rewards.
 
 Last step is to always override User _u_'s latest mask _S<sub>u, p<sub>i</sub></sub>_, whenever their rewards are calculated; with the current total mask: _S<sub>u, p<sub>i</sub></sub>_ = _S<sub>u, p<sub>n</sub></sub>_
 
 --
 
-Looking back at the full formula:
+So, looking back at the full formula:
 
 ![balance](readme-assets/general.png)
 
 > **[!]** This calculation is performed on every **_User Interaction_**
 
-We can now see that all values are present when _p<sub>n</sub>_ is the current period, since they have been being gradually calculated throughout the contract's lifetime.
-
-### _And this is how reward calculation can be done in an efficient way, avoiding loops and thus reducing gas consumption._ 🔥
+We can now see that **all** values are present when calculating rewards and _p<sub>n</sub>_ is the current period, since they have all been gradually calculated throughout the contract's lifetime, hence making this an _O(1)_ calculation.
 
 <br/>
 
+<h3 align="center"> <i>And this is how reward calculation can be done in an efficient way, avoiding loops and thus reducing gas consumption.</i> 🔥</h3>
+
+<br/>
+
+### How it works - V1
+
+With the theory and formulas in mind, a rough example of the general flow can be seen as the following:
+
+-   The contract begins in a zero-state, and won't allow reward deposits until there's at least one staking user.
+-   Whenever there's a mutative interaction, two things may happen:
+
+    -   _User Interaction_: (`deposit`, `withdraw`, or `claim`)
+
+        -   Update user's accumulated rewards, if applicable. (`userPendingRewards`)
+        -   Update user's latest mask (`userRewardPerTokenMask`) to be the current total one (`totalRewardPerTokenMask`)
+
+    -   _Reward Interaction_: (`depositReward`)
+
+        -   Update the total mask. (`totalRewardPerTokenMask`)<br/><br/>
+
+        > These calculations are done **BEFORE** the interaction changes their corresponding state variables. _For example, UserA deposits 100 tokens. When calculating the pending rewards, its balance will be still be 0 because the deposit still has not happened. Later, if UserA deposits another 200, the pending reward calculation will be done with a 100 token balance. And so on..._
+
+-   When a user does a `deposit`, add to its balance, and update the totalPoolBalance accordingly.
+
+-   When a user does a `withdraw`, subtract from its balance, update the totalPoolBalance accordingly and send the corresponding eth.
+
+-   When a user does a `claim`, subtract from its pending rewards and send them to the user. _(In this implementation, a user may not have any staked tokens and still have pending rewards left to claimed.)_
+
 > ### Domain Assumptions
 >
-> -   **ERC-20 Reward Token**: For the sake of making it slightly more interesting, I've decided to make the reward token an ERC-20 instead of just ETH.
+> -   **Token ETH**: It appears to me like the only token being considered is the network token, in this case ETH. So I'm building all functionality using this token, that is, both user staking and the reward system will be in ETH. **[Update: This changes in the V2 implementation]**
 > -   **Sporadic Rewards**: I'm assuming the "weekly" rewards mentioned in the challenge's description were just an example. My understanding is that there wouldn't be an actual **fixed** interval if the rewards are handled manually by the contract's admin. Thus this leads me to believe the reward deposits themselves can happen at any desired time.
 >     -   A much more realistic staking contract would likely implement their rewards with a fix rate per block, or time; Implementing these are far easier with the method I use, though I was able to adapt it successfully.
 > -   **Dynamic Reward Amount**: The amount of rewards to be distributed when a deposit happens can be any amount with no restrictions.
 > -   **The Owner is the Admin**: For simplicity, the admin in charge of the rewards is the owner itself.
 >     -   This could easily be extended to allow more than one people, aka, create a _Team_ role instead.
+
+<a id="process2"></a>
+
+## 🤔 Thought Process - ETHPool V2
+
+TODO :)
+
+### Upgrading the V1 Contract
+
+### How it works - V2
+
+### To keep in mind
 
 <a id="set-up"></a>
 
