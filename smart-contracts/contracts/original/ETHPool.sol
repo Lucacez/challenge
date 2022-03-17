@@ -194,6 +194,10 @@ contract ETHPool is Ownable, ReentrancyGuard {
         positiveEthValue
         updateTotalRewards(msg.value)
     {
+        require(
+            _totalPoolBalance > 0,
+            "The pool must have at least one staking user."
+        );
         _totalRewardBalance += msg.value;
         _totalRewardCount += 1;
         emit DepositedRewards(_totalRewardCount, block.number, msg.value);
