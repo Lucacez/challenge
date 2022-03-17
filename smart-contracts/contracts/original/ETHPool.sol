@@ -103,22 +103,8 @@ contract ETHPool is Ownable, ReentrancyGuard {
     }
 
     /// @notice Withdraws all the user's staked tokens and updates the pool's balance.
-    function withdrawAllETH()
-        public
-        nonReentrant
-        updateUserRewards(msg.sender)
-    {
-        uint256 staked = userStakedBalance[msg.sender];
-        require(staked > 0, "Must have staked ETH to withdraw.");
-
-        userStakedBalance[msg.sender] = 0;
-        _totalPoolBalance -= staked;
-
-        // AFAIK This is the preferred way of transferring ETH currently
-        (bool sent, ) = msg.sender.call{value: staked}("");
-        require(sent, "Failed to send Ether.");
-
-        emit WithdrawnETH(msg.sender, staked);
+    function withdrawAllETH() public {
+        withdrawExactETH(userStakedBalance[msg.sender]);
     }
 
     /// @notice Withdraws an exact amount of user's staked tokens and updates the pool's balance.

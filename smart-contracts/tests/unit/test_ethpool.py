@@ -74,7 +74,7 @@ def test_cant_withdraw_if_no_deposit():
     # Assert
     with pytest.raises(exceptions.VirtualMachineError):
         ethpool.withdrawAllETH({"from": userA})
-    
+
     with pytest.raises(exceptions.VirtualMachineError):
         ethpool.withdrawExactETH(Web3.toWei(0.01, "ether"), {"from": userA})
 
@@ -240,6 +240,18 @@ def test_can_deposit_rewards():
     toDepositRewardAmount = 0.5
 
     # Act
+
+    # Cant distribute rewards if empty
+    with pytest.raises(exceptions.VirtualMachineError):
+        ethpool.depositRewards(
+            {
+                "from": owner,
+                "value": Web3.toWei(toDepositRewardAmount, "ether"),
+            }
+        ).wait(1)
+
+    ethpool.stakeETH({"from": userA, "value": Web3.toWei(1, "ether")}).wait(1)
+
     ethpool.depositRewards(
         {
             "from": owner,
@@ -251,6 +263,7 @@ def test_can_deposit_rewards():
     ethpool.getRewardBalance() == ethpool.balance()
     ethpool.getRewardBalance() == Web3.toWei(toDepositRewardAmount, "ether")
 
+    # Only owner
     with pytest.raises(exceptions.VirtualMachineError):
         ethpool.depositRewards({"from": userA}).wait(1)
 
