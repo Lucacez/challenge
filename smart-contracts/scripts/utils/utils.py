@@ -2,7 +2,8 @@ from brownie import (
     accounts,
     network,
     config,
-    Contract
+    Contract,
+    MockFAU,
 )
 
 from web3 import Web3
@@ -11,7 +12,7 @@ import eth_utils
 
 # Global definition for Local Blockchain dev environment names
 ENV_LOCAL = ["development"]
-    
+
 # Global definition for Forked Blockchain dev environment names
 ENV_FORK = ["mainnet-fork", "rinkeby-fork", "kovan-fork"]
 
@@ -26,22 +27,20 @@ def get_account(index=None, id=None):
 
     Returns:
         Account: Most suitable account to be used in the current dev environment.
-    """    
+    """
     if index:
         return accounts[index]
 
     if id and network.show_active() not in ENV_LOCAL:
         return accounts.load(id)
 
-    if (
-        network.show_active() in ENV_LOCAL
-        or network.show_active() in ENV_FORK
-    ):
+    if network.show_active() in ENV_LOCAL or network.show_active() in ENV_FORK:
         # Use local accounts if in development env
         return accounts[0]
 
     # Default: Use the .env account
     return accounts.add(config["wallets"]["from_key"])
+
 
 def get_config(config_name, config_group=None, config_network=None):
     """
@@ -54,15 +53,14 @@ def get_config(config_name, config_group=None, config_network=None):
             config_network (string, optional): Override network search and use config_network instead. Defaults to None.
     """
     ntwork = network.show_active()
-    
-    
+
     if config_network is not None:
         # Use the network sent as parameter
-        ntwork = config_network            
+        ntwork = config_network
     elif ntwork in ENV_LOCAL:
         # Use the settings defined from a live network. This network is defined in the brownie-config.yaml file.
         ntwork = config["networks"]["development"]["default_config_network"]
-    
+
     # Get the desired settings from the config group
     cnfig = config["networks"][ntwork]["config"]
     return (
@@ -70,6 +68,7 @@ def get_config(config_name, config_group=None, config_network=None):
         if config_group
         else cnfig.get(config_name, None)
     )
+
 
 def get_verify(config_network=None):
     if network.show_active() in ENV_LOCAL:
@@ -81,6 +80,7 @@ def get_verify(config_network=None):
             verify = config["networks"][network.show_active()]["config"]["verify"]
         return verify if verify else False
 
+
 def get_contract(contract_name, contract_group=None):
     """
     Grab the contract addresses from the brownie-config.yaml file if defined.
@@ -88,20 +88,20 @@ def get_contract(contract_name, contract_group=None):
 
         Args:
             contract_name (string): Name of the contract.
-            contract_group (string, optional): Defined group in the brownie-config.yaml file. Defaults to None. 
+            contract_group (string, optional): Defined group in the brownie-config.yaml file. Defaults to None.
 
         Returns:
             brownie.network.contract.ProjectContract: The most recently deployed version of the contract.
     """
-    # Mapping of contract names to their corresponding Mock type 
+    # Mapping of contract names to their corresponding Mock type
     contract_to_mock = {
-        # "vrf_coordinator": VRFCoordinatorMock,
+        "fau": MockFAU,
     }
 
     # Map the contract to its Mock type
     contract_type = contract_to_mock[contract_name]
     # Choose the contract depending on the current environment
-    if network.show_active() in ENV_LOCAL:        
+    if network.show_active() in ENV_LOCAL:
         # Check if the needed Mock has already been deployed, otherwise deploy it
         if len(contract_type) <= 0:
             _deploy_mocks()
@@ -110,12 +110,16 @@ def get_contract(contract_name, contract_group=None):
     else:
         # Grab the contract address from the config file
         config = config["networks"][network.show_active()]["contracts"]
-        contract_address = config[contract_group][contract_name] if contract_group else config[contract_name]
-        
+        contract_address = (
+            config[contract_group][contract_name]
+            if contract_group
+            else config[contract_name]
+        )
+
         # Using Contract class to interact with contracts that already exist and are deployed but are NOT in the project
         # Docs https://eth-brownie.readthedocs.io/en/stable/api-network.html?highlight=from_abi#brownie.network.contract.Contract
         # This is returning a contract based on the already existing contract abi (used for the mocks)
-        # This could be implemented in other ways, for example using Interface instead 
+        # This could be implemented in other ways, for example using Interface instead
         contract = Contract.from_abi(
             contract_type._name,
             contract_address,
@@ -123,23 +127,25 @@ def get_contract(contract_name, contract_group=None):
         )
     return contract
 
+
 def _deploy_mocks():
     """Deploy all Mocks used in this project.
-    Need to manually define which ones to be deployed, using their appropriate parameters, since they are 
+    Need to manually define which ones to be deployed, using their appropriate parameters, since they are
     pretty much project-specific.
-    
+
     Mocks are meant to only be used on local blockchains, where the mocked contracts need to perform some kind of task.
     For example, Chainlink VRF.
-    
+
     # Example
     # LinkToken.deploy({"from": account})
     # VRFCoordinatorMock.deploy(
     #     link_token.address,
     #     {"from": account},
     # )
-    """    
-    
-    pass
+    """
+    account = get_account()
+    MockFAU.deploy({"from": account})
+
 
 def fund_with_erc20(
     to_fund_address, erc20_token_contract, ether_amount=0.1, account=None
@@ -154,7 +160,7 @@ def fund_with_erc20(
 
     Returns:
         TransactionReceipt
-    """            
+    """
     account = account if account else get_account()
 
     print(
@@ -170,6 +176,7 @@ def fund_with_erc20(
         f"Funded {to_fund_address} with {ether_amount} {erc20_token_contract.symbol()}."
     )
     return tx
+
 
 def encode_function_data(function=None, *args):
     """Encodes the function call.
