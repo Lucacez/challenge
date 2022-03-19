@@ -265,7 +265,12 @@ def test_can_deposit_rewards():
 
     # Only owner
     with pytest.raises(exceptions.VirtualMachineError):
-        ethpool.depositRewards({"from": userA}).wait(1)
+        ethpool.depositRewards(
+            {
+                "from": userA,
+                "value": Web3.toWei(toDepositRewardAmount, "ether"),
+            }
+        ).wait(1)
 
 
 def test_can_claim_rewards():
