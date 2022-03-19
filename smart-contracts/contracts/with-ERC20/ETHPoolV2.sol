@@ -17,7 +17,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title ETHPool
 /// @author CMierez
 /// @notice ETH Staking Pool with an sporadic centralized Rewards distribution
-contract ETHPool2 is Ownable {
+contract ETHPoolV2 is Ownable {
     /* -------------------------------------------------------------------------- */
     /*                                  Variables                                 */
     /* -------------------------------------------------------------------------- */
@@ -80,6 +80,12 @@ contract ETHPool2 is Ownable {
     /* -------------------------------------------------------------------------- */
     /*                                  Modifiers                                 */
     /* -------------------------------------------------------------------------- */
+    /// @notice Require a positive value.
+    modifier requirePositiveValue(uint256 _value) {
+        require(_value > 0, "Value must be positive.");
+        _;
+    }
+
     /// @notice Update the user's pending rewards and shift its mask accordingly.
     modifier updateUserRewards(address _account) {
         // Update the user's pending rewards
@@ -110,6 +116,7 @@ contract ETHPool2 is Ownable {
     function stakeWithPermit(uint256 _amount)
         public
         payable
+        requirePositiveValue(_amount)
         updateUserRewards(msg.sender)
     {
         _totalPoolBalance += _amount;
@@ -129,10 +136,10 @@ contract ETHPool2 is Ownable {
     /// @param _amount the exact amount of tokens to withdraw.
     function withdrawExact(uint256 _amount)
         public
+        requirePositiveValue(_amount)
         updateUserRewards(msg.sender)
     {
         uint256 staked = userStakedBalance[msg.sender];
-        require(_amount > 0, "Must unstake a positive value.");
         require(staked >= _amount, "Not enough tokens staked.");
 
         userStakedBalance[msg.sender] = staked - _amount;
@@ -190,8 +197,10 @@ contract ETHPool2 is Ownable {
         public
         payable
         onlyOwner
+        requirePositiveValue(_amount)
         updateTotalRewards(_amount)
     {
+        require(_totalPoolBalance > 0, "Staking pool must not be empty.");
         _totalRewardBalance += _amount;
         _totalRewardCount += 1;
 
