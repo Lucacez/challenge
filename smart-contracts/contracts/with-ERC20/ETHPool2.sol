@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /* ------------------------------------------------------------------------------ */
 /*                                     !! NOTICE !!                               */
@@ -28,6 +29,9 @@ contract ETHPool2 is Ownable {
     /// @notice Each user's token staking balance
     mapping(address => uint256) public userStakedBalance;
 
+    /// @notice The contract address of the staking token
+    IERC20 public stakingToken;
+
     /* --------------------------------- Rewards -------------------------------- */
     /// @notice The total amount of rewards yet to be distributed
     uint256 private _totalRewardBalance;
@@ -45,6 +49,9 @@ contract ETHPool2 is Ownable {
     /// @notice The user's rewards data
     mapping(address => UserReward) public userRewards;
 
+    /// @notice The contract's reward token
+    IERC20 public rewardToken;
+
     /* -------------------------------------------------------------------------- */
     /*                                   Structs                                  */
     /* -------------------------------------------------------------------------- */
@@ -61,8 +68,8 @@ contract ETHPool2 is Ownable {
     /* -------------------------------------------------------------------------- */
     /*                                   Events                                   */
     /* -------------------------------------------------------------------------- */
-    event StakedETH(address indexed user, uint256 amount);
-    event WithdrawnETH(address indexed user, uint256 amount);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
     event DepositedRewards(
         uint256 indexed depositNumber,
         uint256 blockNumber,
@@ -73,12 +80,6 @@ contract ETHPool2 is Ownable {
     /* -------------------------------------------------------------------------- */
     /*                                  Modifiers                                 */
     /* -------------------------------------------------------------------------- */
-    /// @dev Checks whether the [msg.value] is a positive number
-    modifier positiveEthValue() {
-        require(msg.value > 0, "Must send a positive amount of ETH.");
-        _;
-    }
-
     /// @notice Update the user's pending rewards and shift its mask accordingly.
     modifier updateUserRewards(address _account) {
         // Update the user's pending rewards
@@ -95,54 +96,51 @@ contract ETHPool2 is Ownable {
     }
 
     /* -------------------------------------------------------------------------- */
+    /*                                 Constructor                                */
+    /* -------------------------------------------------------------------------- */
+    constructor(address _stakingToken, address _rewardToken) public {
+        stakingToken = IERC20(_stakingToken);
+        rewardToken = IERC20(_rewardToken);
+    }
+
+    /* -------------------------------------------------------------------------- */
     /*                                  Functions                                 */
     /* -------------------------------------------------------------------------- */
-    /// @notice Receives an ETH deposit and updates the user's balance accordingly.
-    function stakeETH()
+    /// @notice Receives a deposit and updates the user's balance accordingly.
+    function stakeWithPermit(uint256 _amount)
         public
         payable
-        positiveEthValue
         updateUserRewards(msg.sender)
     {
-        _totalPoolBalance += msg.value;
-        userStakedBalance[msg.sender] += msg.value;
-        emit StakedETH(msg.sender, msg.value);
+        _totalPoolBalance += _amount;
+        userStakedBalance[msg.sender] += _amount;
+
+        stakingToken.transferFrom(msg.sender, address(this), _amount);
+
+        emit Staked(msg.sender, _amount);
     }
 
     /// @notice Withdraws all the user's staked tokens and updates the pool's balance.
-    function withdrawAllETH() public updateUserRewards(msg.sender) {
-        uint256 staked = userStakedBalance[msg.sender];
-        require(staked > 0, "Must have staked ETH to withdraw.");
-
-        userStakedBalance[msg.sender] = 0;
-        _totalPoolBalance -= staked;
-
-        // AFAIK This is the preferred way of transferring ETH currently
-        (bool sent, ) = msg.sender.call{value: staked}("");
-        require(sent, "Failed to send Ether.");
-
-        emit WithdrawnETH(msg.sender, staked);
+    function withdrawAll() public {
+        withdrawExact(userStakedBalance[msg.sender]);
     }
 
     /// @notice Withdraws an exact amount of user's staked tokens and updates the pool's balance.
     /// @param _amount the exact amount of tokens to withdraw.
-    function withdrawExactETH(uint256 _amount)
+    function withdrawExact(uint256 _amount)
         public
         updateUserRewards(msg.sender)
     {
         uint256 staked = userStakedBalance[msg.sender];
-        require(staked > 0, "Must have staked ETH to withdraw.");
         require(_amount > 0, "Must unstake a positive value.");
-        require(staked >= _amount, "Not enough ETH staked.");
+        require(staked >= _amount, "Not enough tokens staked.");
 
         userStakedBalance[msg.sender] = staked - _amount;
         _totalPoolBalance -= _amount;
 
-        // AFAIK This is the preferred way of transferring ETH currently
-        (bool sent, ) = msg.sender.call{value: _amount}("");
-        require(sent, "Failed to send Ether.");
+        stakingToken.transfer(msg.sender, _amount);
 
-        emit WithdrawnETH(msg.sender, _amount);
+        emit Withdrawn(msg.sender, _amount);
     }
 
     /* --------------------------------- Views --------------------------------- */
@@ -181,24 +179,25 @@ contract ETHPool2 is Ownable {
         view
         returns (uint256)
     {
-        if (_totalPoolBalance == 0) {
-            return 0;
-        }
+        if (_totalPoolBalance == 0) return 0;
+
         return totalRewardPerTokenMask + ((_reward * 1e18) / _totalPoolBalance);
     }
 
     /* --------------------------------- Rewards -------------------------------- */
     /// @notice Admin's function to distribute rewards to stakers.
-    function depositRewards()
+    function depositRewards(uint256 _amount)
         public
         payable
         onlyOwner
-        positiveEthValue
-        updateTotalRewards(msg.value)
+        updateTotalRewards(_amount)
     {
-        _totalRewardBalance += msg.value;
+        _totalRewardBalance += _amount;
         _totalRewardCount += 1;
-        emit DepositedRewards(_totalRewardCount, block.number, msg.value);
+
+        rewardToken.transferFrom(msg.sender, address(this), _amount);
+
+        emit DepositedRewards(_totalRewardCount, block.number, _amount);
     }
 
     /// @notice Claim all the user's pending rewards.
@@ -207,8 +206,8 @@ contract ETHPool2 is Ownable {
         uint256 pending = uReward.pendingAmount;
         require(uReward.pendingAmount > 0, "User has no pending rewards.");
         require(
-            address(this).balance >= pending,
-            "CRITICAL: Contract has no ETH."
+            stakingToken.balanceOf(address(this)) >= pending,
+            "CRITICAL: Contract has not enough tokens."
         );
         require(
             _totalRewardBalance >= pending,
@@ -219,8 +218,7 @@ contract ETHPool2 is Ownable {
         uReward.totalAmount += pending;
         _totalRewardBalance -= pending;
 
-        (bool sent, ) = msg.sender.call{value: pending}("");
-        require(sent, "Failed to send Ether.");
+        rewardToken.transfer(msg.sender, pending);
 
         emit ClaimedRewards(msg.sender, pending);
     }
