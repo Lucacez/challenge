@@ -24,7 +24,7 @@ The project is divided into two sections: `Smart Contracts` & `Frontend`.
 -   [How it works](#how-it-works---v1)
 -   [Assumptions](#domain-assumptions)
 
-### [🤔 Thought Process - ETHPoolV2](#process2)
+### [🔧 ETHPoolV2 & ETHPoolV3](#process2)
 
 -   [Upgrading the V1 Contract](#upgrading-the-v1-contract)
 -   [How it works](#how-it-works---v2)
@@ -204,15 +204,53 @@ With the theory and formulas in mind, a rough example of the general flow can be
 
 <a id="process2"></a>
 
-## 🤔 Thought Process - ETHPool V2
+## 🔧 ETHPoolV2 & ETHPoolV3
 
-TODO :)
+During the making the of the original solution, some different ideas popped up in my mind, and while some were too complex to be put to test quickly, I still wanted to give some of the easier ones a go and see whether they would actually work.
+
+> ## ❕ These contracts are just intended to be a **Proof of Concept** ❕
 
 ### Upgrading the V1 Contract
 
+The upgrade idea is pretty straight forward - to make the contract a bit more "realistic" I decided to get rid of the ETH-only transactions and move on to supporting ERC-20s instead.
+
 ### How it works - V2
 
-### To keep in mind
+The steps to achieve this were pretty simple:
+
+-   Define a staking ERC-20 token.
+-   Define a reward ERC-20 token.
+-   Replace ETH transfers for ERC-20 transfers.
+    -   Manage all staking-related interactions with the staking token.
+    -   Manage all the reward distribution using the reward token.
+
+### How it works - V3
+
+Now, to further complicate things, I also had the idea to allow the owner to reward whatever tokens they would desire. That is, being able to distribute different ERC-20s arbitrarily.
+
+At a first glance, the reward distribution system seemed easily adaptable to this new requirement. However, despite it indeed being adaptable, it turned out to require a few compromises to be made in terms of performance.
+
+In order to distribute multiple ERC-20s, some kind of list would need to be created to keep track of the ERC-20s that could be distributed. The owner would have no manually **allow** a token for it to be a valid reward.
+
+Now, modifying the algorithm from V1, it was just a matter of "parallelizing" the same process that was being done for on token. So instead of having a single `totalRewardPerTokenMask` and a `userRewardPerTokenMask` per user, we instead have:
+
+-   `totalRewardPerTokenMask` for _each_ token.
+-   `userRewardPerTokenMask` for each token _and_ each user. (Mapping of a mapping)
+
+This would at first seem terrible - and it kind of is - but I'd argue this isn't as bad as it may seem. My reasoning here is that the amount of tokens that would ever be given out as a reward wouldn't be something that would scale greatly. Giving out 10, 20, or 30 different tokens already seems like a lot, let alone 100, 1000, 10000...
+
+The algorithm would work exactly the same way as before, but:
+
+-   whenever a _Reward Interaction_ happens, only the `totalRewardPerTokenMask` of the corresponding token would be updated.
+-   whenever a _User Interaction_ happens, you would need to update the user's rewards _for each_ possible allowed token. (But, again, this would realistically be a a very small loop)
+
+In any case, ETHPoolV3 is able to achieve said task, and users are able to receive rewards in the form of different ERC-20 tokens.
+
+> ## Side note
+>
+> Another more complex way I can think of to avoid this not-so-elegant solution for the multiple reward tokens would be having different contracts that just implement a single ERC20 reward (Like ETHPoolV2) and varying the reward token, though somehow sharing the staking balances.
+>
+> In a more realistic situation, it would probably involve having completely separate and independent pools for each kind of reward, since they would also probably involve some kind of schedule, rate, etc.
 
 <a id="set-up"></a>
 
