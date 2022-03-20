@@ -22,6 +22,7 @@ networks:
         contracts:
             tokens:
                 fau: "0xFab46E002BbF0b4509813474841E0716E6730136"
+                link: "0x01BE23585060835E02B77ef475b0Cc51aA1e0709"
         config:
             verify: True
             # Example, Chainlink VRF keyhash parameter

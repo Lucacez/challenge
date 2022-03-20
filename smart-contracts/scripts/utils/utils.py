@@ -4,6 +4,7 @@ from brownie import (
     config,
     Contract,
     MockFAU,
+    MockLINK,
 )
 
 from web3 import Web3
@@ -96,6 +97,7 @@ def get_contract(contract_name, contract_group=None):
     # Mapping of contract names to their corresponding Mock type
     contract_to_mock = {
         "fau": MockFAU,
+        "link": MockLINK,
     }
 
     # Map the contract to its Mock type
@@ -145,6 +147,7 @@ def _deploy_mocks():
     """
     account = get_account()
     MockFAU.deploy({"from": account})
+    MockLINK.deploy({"from": account})
 
 
 def fund_with_erc20(
